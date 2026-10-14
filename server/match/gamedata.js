@@ -323,7 +323,8 @@ export class GameData {
   mergeCount(id) {
     const c = this.chess(id);
     if (!c || c.isGolden) return 0;
-    if (Number.isInteger(c.upgradeNum) && c.upgradeNum > 0) return c.upgradeNum;
+    // [MOD] 自走棋合成：默认 2 个即可升级（原 3）。仍可被 economy.mergeCountOverrides 单独覆盖。
+    if (Number.isInteger(c.upgradeNum) && c.upgradeNum > 0) return 2;
     const ov = this.economy.mergeCountOverrides;
     if (ov && Number.isInteger(ov[id])) return ov[id];
     return posIntOr(this.economy.mergeCount, DEFAULTS.mergeCount);
