@@ -1101,14 +1101,30 @@ test('突变细胞: a DEPLOYED carrier leaves the field — the new operator is 
   assert.ok(handIds(ps, 'item').includes(A('5_08')), 'the cell back in the hand');
 });
 
-test('人事部文档: deploy cap becomes 9 (a second copy adds nothing)', () => {
+test('人事部文档: each use adds one deployment slot, repeatedly, up to 13', () => {
   const { m, ps, equip } = setup();
   const t = give(m, ps, plain((c) => c.tier === 1)[0], 'hand');
   assert.equal(ps.deployCap, 8);
   assert.deepEqual(equip(giveItem(m, ps, A('6_08')), t), OK);
   assert.equal(ps.deployCap, 9);
   assert.deepEqual(equip(giveItem(m, ps, A('6_08')), t), OK);
-  assert.equal(ps.deployCap, 9);
+  assert.equal(ps.deployCap, 10);
+  for (const expected of [11, 12, 13, 13]) {
+    assert.deepEqual(equip(giveItem(m, ps, A('6_08')), t), OK);
+    assert.equal(ps.deployCap, expected);
+  }
+  assert.equal(ps.privateView().deployCap, 13);
+  const used = new Set();
+  const ids = plain(c => c.position === 'MELEE' && c.chessId !== t.id).slice(0, 14);
+  assert.equal(ids.length, 14);
+  for (let i = 0; i < ids.length; i++) {
+    const at = legalTileFor(m, ps, ids[i], used);
+    used.add(`${at[0]},${at[1]}`);
+    const piece = give(m, ps, ids[i], 'hand');
+    const result = m.handle(ps.playerId, { t: 'g.move', uid: piece.uid, to: { area: 'board', row: at[0], col: at[1] } });
+    assert.deepEqual(result, i < 13 ? OK : { error: 'BOARD_FULL' });
+  }
+  assert.equal(ps.deployCount, 13, 'thirteen operators can actually deploy');
   cover(A('6_08'), B('6_08'));
 });
 

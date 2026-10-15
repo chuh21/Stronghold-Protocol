@@ -91,7 +91,7 @@ test('normal waves: one pick per round, per-action counts 1–5, the other movem
         assert.equal(w.pick, pick);
         assert.equal(w.templateId, gd.roundCfg(r).template);
         assert.equal(w.timeLimit, gd.combatTimeLimit(r));
-        assert.deepEqual(gd.enemyScale(r), gd.baseEnemyScale(r), 'no custom multiplier');
+        if (!gd.endless || r < gd.endless.growthStart) assert.deepEqual(gd.enemyScale(r), gd.baseEnemyScale(r), 'opening scaling unchanged');
         const scale = gd.enemyScale(r);
         const allowed = new Set([pick.key, pick.normal, pick.elite]);
         for (const s of w.spawns) {
@@ -149,10 +149,10 @@ test('boss templates: leaders never scaled, pairs use the multi template, single
   const gd = new GameData(DATA, 'mode_multi_abyss');
   for (let seed = 1; seed <= 6; seed++) {
     const setup = setupMatchWaves(gd, createRng(seed));
-    const pick = setup.picks[14];
+    const pick = setup.picks[gd.bossRound];
     for (const bossId of Object.keys(gd.mode.bossWeights)) {
-      const pair = buildBossWave(gd, createRng(1), setup.factions, 14, { bossId, solo: false });
-      const single = buildBossWave(gd, createRng(1), setup.factions, 14, { bossId, solo: true });
+      const pair = buildBossWave(gd, createRng(1), setup.factions, gd.bossRound, { bossId, solo: false });
+      const single = buildBossWave(gd, createRng(1), setup.factions, gd.bossRound, { bossId, solo: true });
       assert.ok(!/_s$/.test(pair.templateId) && /_s$/.test(single.templateId), `${bossId}: ${pair.templateId} / ${single.templateId}`);
       for (const w of [pair, single]) {
         assert.equal(w.pick, pick);
@@ -182,6 +182,7 @@ test('boss templates: leaders never scaled, pairs use the multi template, single
 test('co-op 终极: supplyHpMul = the 补给线 / 补给线II share of hp (hp ÷ it = the 攻坚装备 stacks 1.2^kAtk); wave and bounty mods carry it (PR #272)', () => {
   const gd = new GameData(DATA, 'mode_multi_abyss');
   for (const [r, row] of Object.entries(gd.mode.enemyScale)) {
+    if (Number(r) >= gd.endless.growthStart) continue; // custom growth is tested in endless.test.js
     const sc = gd.enemyScale(Number(r));
     assert.ok(Math.abs(sc.hpMul / (sc.supplyHpMul ?? 1) - 1.2 ** row.kAtk) < 1e-5, `R${r}: ${sc.hpMul} / ${sc.supplyHpMul}`);
   }

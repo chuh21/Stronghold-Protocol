@@ -10,7 +10,7 @@
 //   gain_coin_when_round_start {count}                    精打细算玩偶           +count funds every round start
 //   use_equip_reward_char_chess_with_same_bond {count}    简易通讯机             `count` random chess sharing a bond
 //   use_equip_gain_coin_when_next_round_start {count}     见钱眼开玩偶           +count funds next round
-//   equip_destory_deployment_cnt_change {count}           人事部文档             deploy cap = count
+//   equip_destory_deployment_cnt_change {count}           人事部文档             [MOD] deploy cap +1, max 13
 //   use_equip_upgrade_char / equip_round_start_upgrade_char 博士投影             promote (golden: now, normal: next round)
 //   use_equip_reward_char_chess                           拟态物质               3rd copy (none when the pool is
 //                                                                                out), or with < 2 a same-bond chess
@@ -29,6 +29,7 @@
 
 import { getData } from '../data.js';
 import { itemKey } from './gamedata.js';
+import { PERSONNEL_DEPLOY_MAX } from '../../shared/endless.js';
 import { msg, dn } from '../../shared/i18n.js';
 
 const int = (v, d = 0) => (Number.isFinite(v) ? Math.trunc(v) : d);
@@ -122,7 +123,10 @@ const ITEM_HANDLERS = {
     onEquip(ctx, ev) { ctx.addPendingFunds(int(paramsOf(ctx, ev.item).count, 2)); },
   },
   equip_destory_deployment_cnt_change: {
-    onEquip(ctx, ev) { ctx.setDeployCapAtLeast(int(paramsOf(ctx, ev.item).count, 9)); },
+    // [MOD] Each document adds one slot, repeatedly, up to 13 (owner request 2026-10-14).
+    onEquip(ctx) {
+      if (ctx.deployCap() < PERSONNEL_DEPLOY_MAX) ctx.setDeployCapAtLeast(ctx.deployCap() + 1);
+    },
   },
   use_equip_upgrade_char: {
     onEquip(ctx, ev) {

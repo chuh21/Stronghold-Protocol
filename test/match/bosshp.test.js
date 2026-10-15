@@ -72,7 +72,7 @@ test('终极 Final Assault (+200 layers per active bond): one pool (bloodPoint �
   const m = h.m;
   const pool = m.bossPool;
   assert.equal(m.alivePlayers().length, 4);
-  assert.equal(pool.maxHp, DATA.bosses.boss_1.bloodPoint.ABYSS * 4, 'four alive: 4 × the data value (14 400 000)');
+  assert.equal(pool.maxHp, Math.round(DATA.bosses.boss_1.bloodPoint.ABYSS * 4 * m.gd.growthFactor(m.round, 'hpGrowth')), 'four alive, with custom late-round growth');
   const fields = m.fields.filter((f) => f.battle);
   assert.equal(fields.length, 2, 'two pair fields');
   // one second into the fight: every operator's stats
@@ -165,7 +165,7 @@ test('终极 Final Assault vs 假想敌：胄 (seeded bot match): both players\'
   assert.ok(withArcane > 100, `the leader carried 奥术 (${withArcane} samples)`);
   assert.ok(links.length >= 1, 'drones were shot down');
   for (const x of links) assert.equal(x, m.bossPool.maxHp * 0.02, 'drone link = 2 % × the pool');
-  assert.equal(m.bossPool.maxHp, DATA.bosses.boss_1.bloodPoint.ABYSS * 4, 'the 14 400 000 pool of 4 alive players');
+  assert.equal(m.bossPool.maxHp, Math.round(DATA.bosses.boss_1.bloodPoint.ABYSS * 4 * m.gd.growthFactor(m.round, 'hpGrowth')), 'the shared pool with custom late-round growth');
   m.dispose();
 });
 

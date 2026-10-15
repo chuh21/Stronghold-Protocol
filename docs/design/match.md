@@ -33,7 +33,26 @@ LOBBY(room) → INFO_CHECK (co-op 25 s; solo and any single-human match untimed 
    R15 HIDDEN_CORE  (if difficulty ≥ NORMAL and Σ activated layers > 350 solo / 1200 co-op and team LP > 1)
 → RESULT (per-player stats, titles, rounds passed, victory/defeat)
 ```
-Solo FUNNY has 9 rounds (boss at R9); everything is read from `data/config.json → modes[modeId]`.
+Solo FUNNY has 9 rounds (boss at R9). The official mode templates come from `data/config.json → modes[modeId]`.
+
+**Local custom rules (owner request, 2026-10-14).** ABYSS defaults to 20 rounds; the room host may choose
+20 / 30 / 40 / 50 or an integer from 20–100. `room.setEndless {options: {rounds, growthStart, hpGrowth, atkGrowth}}`
+is host-only before the match, for solo and co-op; a change un-readies other humans. Settings stay with the room,
+including after host migration or a difficulty switch; they only affect ABYSS. Final Assault moves to `rounds`,
+Hidden Core to `rounds+1` with the existing eligibility condition. Extra normal rounds reuse the last normal template
+and repeat the seeded 15-slot faction schedule with fresh enemy picks [ASSUMED]. The official data is not mutated.
+
+The custom curve replaces the late-round table: before `growthStart`, use the opening table through R14 (then hold
+R14 if the start is later); from that round use the table at `min(growthStart-1,14)`, multiplied by
+`(1+hpGrowth/100)^(r-growthStart+1)` for HP and `(1+atkGrowth/100)^(r-growthStart+1)` for ATK. Movement speed and
+supply exclusions keep the anchor's values. `growthStart` is an integer 2–100; each growth rate is 0–100%.
+Default R15 / HP +20% / ATK +10% is [ASSUMED], a tunable custom balance decision, not official data. Leader HP pools
+also receive the HP growth factor at their own round; other modes keep their existing rules.
+
+**人事部文档 (also called 人事部档案).** The base deployment cap stays 8; each consumed document adds one slot to
+the current cap, repeatedly up to 13, persists for the match, and is still consumed at the cap. This deliberately
+replaces the official effect parameter `count:9` (set cap to 9), at the owner's request. Summon stacks still take no
+operator deployment slot. The UI overlays this custom description through `t()` over the generated official text.
 
 ### 6.2 Player state (PlayerState.js) — authoritative per player
 

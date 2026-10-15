@@ -1218,5 +1218,18 @@
   "{names}只能部署在召唤者相邻四格，已退回整备区": "{names} can only be deployed on the four tiles adjacent to the summoner and returned to the Bench",
   "{names}只能部署在召唤者相邻四格，整备区已满，下回合返还": "{names} can only be deployed on the four tiles adjacent to the summoner; the Bench is full, so they come back next round",
   "装备库存不足，未获得该装备": "Equipment stock is insufficient; no equipment was received",
-  "库存不足": "Out of stock"
+  "库存不足": "Out of stock",
+  "终极自定义": "Custom Ultimate",
+  "{n} 回合": "{n} rounds",
+  "第 {n} 回合起加速": "Growth starts at round {n}",
+  "生命 +{hp}% / 攻击 +{atk}%": "HP +{hp}% / ATK +{atk}%",
+  "总回合数（20–100）": "Total rounds (20–100)",
+  "难度加速起始回合": "First growth round",
+  "每回合生命增长（%）": "HP growth per round (%)",
+  "每回合攻击增长（%）": "ATK growth per round (%)",
+  "增长按回合复利计算，替代后期原有增长；生命增长也作用于领袖。最终攻势位于最后一回合，隐秘核心额外增加一回合。": "Growth compounds each round and replaces the original late-round growth; HP growth also affects leaders. Final Assault is the last round; Hidden Core adds one extra round.",
+  "应用设置": "Apply settings",
+  "修改后请应用设置": "Apply your changes to save them",
+  "设置已应用": "Settings applied",
+  "使用后销毁，可部署干员数增加 1，可重复使用，上限为 13。": "Consumed on use. Increases deployable Operators by 1. Can be used repeatedly, up to 13."
 }

@@ -8,6 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { APP_VERSION, PROTOCOL_VERSION, DEV_BUILD } from '../shared/constants.js';
 import { isDevVersion } from '../tools/package.mjs';
+import { compareVersions } from '../tools/package-update.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -15,8 +16,8 @@ const pkg = JSON.parse(read('package.json'));
 const lock = JSON.parse(read('package-lock.json'));
 
 test('one release version: package.json, package-lock.json and APP_VERSION', () => {
-  // a release x.y.z, or x.y.z-dev on the public dev branch (the owner's decision of 2026-10-06)
-  assert.match(APP_VERSION, /^\d+\.\d+\.\d+(-dev)?$/);
+  // The custom branch optionally adds a fourth revision; development builds still end in -dev.
+  assert.match(APP_VERSION, /^\d+\.\d+\.\d+(?:\.\d+)?(-dev)?$/);
   assert.equal(DEV_BUILD, APP_VERSION.endsWith('-dev'));
   assert.equal(pkg.version, APP_VERSION);
   assert.equal(lock.version, APP_VERSION);
@@ -27,13 +28,11 @@ test('one release version: package.json, package-lock.json and APP_VERSION', () 
 
 test('CHANGELOG.md opens with the release version, and the README links it', () => {
   const log = read('CHANGELOG.md');
-  const first = log.match(/^## (\d+\.\d+\.\d+) — (\d{4}-\d{2}-\d{2})/m);
+  const first = log.match(/^## (\d+\.\d+\.\d+(?:\.\d+)?) — (\d{4}-\d{2}-\d{2})/m);
   assert.ok(first, 'a "## x.y.z — date" heading');
   if (DEV_BUILD) {
     // a dev build has no entry of its own yet: the newest one is the last release, older than the version in development
-    const num = (v) => v.split(/[.-]/).slice(0, 3).map(Number);
-    const [a, b] = [num(first[1]), num(APP_VERSION)];
-    assert.ok(a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2]))), `the newest entry ${first[1]} precedes ${APP_VERSION}`);
+    assert.ok(compareVersions(first[1], APP_VERSION) < 0, `the newest entry ${first[1]} precedes ${APP_VERSION}`);
   } else assert.equal(first[1], APP_VERSION, 'the newest entry is the current version');
   assert.match(log, /^## 0\.1\.0 — 2026-10-02/m, 'the first public release stays listed');
   const readme = read('README.md');

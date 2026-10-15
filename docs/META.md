@@ -429,7 +429,7 @@ Writes (validated, never throw on bad input; funds and available stock stay non-
 | `offerItems(ids, { tier, label })` | the same for items (slots of kind `'item'`, drawn as item cards) — 凯瑟琳 定向投放 style (player report #6 after 0.1.0) |
 | `triggerGarrisons(uid, eventType, { asUid })` | run another owned chess's 特质 of that eventType now (铃兰 "触发…的获得时效果"); 投资人 still multiplies SERVER_GAIN; SERVER_PRICE cannot be triggered; depth-capped |
 | `setShopSlot(i, { kind, id, price?, frozen? } \| null)` | rewrite a shop slot (special refreshes) |
-| `addDeployCap(n)` / `setDeployCapAtLeast(n)` | deploy cap (+effects; 人事部文档 = 9) |
+| `addDeployCap(n)` / `setDeployCapAtLeast(n)` | deploy cap (+effects; 人事部文档 adds 1 repeatedly, up to 13); `deployCap()` reads the current cap |
 | `setBondCountBonus(bondId, n)` | extra member count for a bond |
 | `setDeviceActive(alias, on)` / `setTileOverride(r, c, 'melee'\|'ranged'\|'none')` | terrain changes of this player's board (legality + battle input `deviceOverrides`) |
 | `addEffect(ref)` / `removeEffect(id)` / `setEffectCounter(id, v)` | EffectRefs `{ id, key?, name, desc, iconKind, iconId, counter?, battle=true, params?, data?, hidden? }` — shown in `m.private.effects`, passed to battles as `playerEffects` when `battle` |
@@ -459,7 +459,7 @@ a promotion or `ctx.destroyPiece` returns) ends with the auto-merge (`acquireIte
 Built-ins (builtinMeta.js, overridable): 盟约之币 / 骑士储蓄罐 (random funds), 随身身份牌 (layers of the target's bonds),
 紧急调度券 (take shop chess), 精打细算玩偶 (+funds each round), 简易通讯机 (same-bond chess), 拟态物质 (with 2 copies
 owned the 3rd — nothing when the pool has none left, GitHub #207 —, else a same-bond chess), 见钱眼开玩偶
-(+funds next round), 人事部文档 (cap 9), 博士投影 (elite now / at the next round start), 寻呼模块 / 信标 (pick-one
+(+funds next round), 人事部文档 (+1 per use, cap 13), 博士投影 (elite now / at the next round start), 寻呼模块 / 信标 (pick-one
 offers; 信标 gifts the original chess — an elite stays an elite — to the teammate with the most members of its bonds next
 round, also when the sender was eliminated meanwhile; a failed grant waits for the next round start), 商业包装方案 (every
 N sells → same-bond chess), 突变细胞 (after battle the carrier — deployed or on the bench — is destroyed, its tile freed;
@@ -961,3 +961,18 @@ Fixed equipment gifts from `SERVER_GAIN_EQUIP` (卡涅利安、蜜蜡、缪尔�
 including the same families awarded by 变形者. They still occupy ordinary/advanced 1/2 copies and can leave availability
 at zero after a removal. Ordinary shop, reward and random grants retain their limits. `requirePool:false` is not a
 universal equipment bypass. Rockrock/Flametail's measured weighted subsets remain subject to shared availability (§30.2).
+
+## Local extended Ultimate settings (2026-10-14)
+
+`Match` accepts `opts.endless` (ABYSS only), passed to `new GameData(data, modeId, options)`.
+`shared/endless.js` validates the full settings object and provides defaults (20 rounds, growth from R15,
+HP +20% / ATK +10% per round [ASSUMED]). `GameData` builds a private mode view with moved boss/hidden templates
+and repeated late normal templates, and calculates compounded stats without editing generated JSON.
+`setupMatchWaves` extends the seeded type schedule and precomputes enemy picks through the hidden round.
+The room publishes `room.state.endless`; the match publishes `m.public.endless`, `lastRound`, `bossRound`,
+`hiddenRound`. Clients use those round positions ahead of static mode data. Details and bounds: DESIGN §6.1.
+
+`GameData.bossPoolHp(bossId, aliveCount, round = bossRound)` and `finalAssault.bossPoolHp` apply the custom HP factor
+at that round; `startBossRound` passes the actual round, including Hidden Core. Other modes have factor 1.
+Personnel documents use `deployCap()` / `setDeployCapAtLeast(current+1)` (max 13) so every use adds exactly one
+slot even when another effect has already raised the cap.

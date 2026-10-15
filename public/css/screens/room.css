@@ -3,6 +3,15 @@
    ========================================================================================== */
 
 .room-screen .topbar { height: 1.36rem; }
+.endless-settings { flex-shrink: 0; margin: 0 .6rem .12rem; padding: .12rem .2rem; border: 1px solid var(--line); background: rgba(0,0,0,.38); font-size: calc(.16 * var(--t)); max-height: 3rem; overflow: auto; }
+.endless-settings summary { cursor: pointer; color: var(--mint-400); }
+.endless-settings form { display: grid; gap: .12rem; padding-top: .12rem; }
+.endless-settings__presets { display: flex; flex-wrap: wrap; gap: .08rem; }
+.endless-settings__fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .12rem; }
+.endless-settings label { display: grid; gap: .06rem; }
+.endless-settings input { width: 100%; min-width: 0; padding: .08rem; color: var(--text-hi); background: rgba(0,0,0,.4); border: 1px solid var(--line); }
+.endless-settings p { margin: 0; color: var(--text-lo); }
+@media (max-width: 700px) { .endless-settings { margin-inline: .2rem; } .endless-settings__fields { grid-template-columns: repeat(2, minmax(0,1fr)); } }
 .room-ping { display: flex; flex-direction: column; align-items: flex-start; gap: .04rem; }
 
 /* ---- invite key ---------------------------------------------------------------------------------------- */

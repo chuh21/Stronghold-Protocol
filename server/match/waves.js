@@ -1,6 +1,7 @@
 // server/match/waves.js — per-match enemy setup and per-round spawn generation: the OFFICIAL generator decoded from
 // the client (`RandomEnemyGenerater`, research 08 §2; DESIGN §14 "Corrections from research 08/09"). No custom balance:
 // counts, kinds, timing and stat scaling are the official ones.
+// [MOD] Extended ABYSS repeats the faction schedule and uses GameData's configurable late stat curve (§6.1).
 //
 // Per match (setupMatchWaves):
 //   * stage: weighted (stages[id].weight) among mode.stages that are active with weight > 0 — official mode data:
@@ -206,6 +207,13 @@ export function setupMatchWaves(gd, rng) {
   const typeSlots = makeTypeSchedule(gd, srng, chosen);
   const picks = [null];
   for (let r = 1; r <= typeSlots.length; r++) picks.push(pickRoundEntry(gd, srng, typeSlots[r - 1], r));
+  // [MOD] Repeat the seeded type schedule for extended matches; draw each later round's own enemy pick.
+  const cycle = typeSlots.slice();
+  for (let r = typeSlots.length + 1; r <= (gd.hiddenRound || gd.lastRound); r++) {
+    const type = cycle[(r - 1) % cycle.length];
+    typeSlots.push(type);
+    picks.push(pickRoundEntry(gd, srng, type, r));
+  }
   Object.defineProperty(factions, 'schedule', { value: Object.freeze({ typeSlots: typeSlots.slice(), picks }), enumerable: false });
   return { stageId, factions, bossId, hiddenBossId, typeSlots, picks };
 }

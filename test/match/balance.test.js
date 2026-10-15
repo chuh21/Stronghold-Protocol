@@ -32,10 +32,11 @@ test('no custom balance: legacy tuning multipliers are ignored; enemy scale = th
   // owner's decision of 2026-10-06 adopting PR #209 — it replaces the fixed pool of DESIGN §20.10)
   for (const [modeId, key] of [['mode_multi_funny', 'FUNNY'], ['mode_multi_normal', 'NORMAL'], ['mode_multi_hard', 'HARD'], ['mode_multi_abyss', 'ABYSS']]) {
     const gd = new GameData(RAW, modeId);
+    const growth = gd.growthFactor(gd.bossRound, 'hpGrowth');
     for (const b of ['boss_1', 'boss_5', 'boss_8']) {
-      assert.equal(gd.bossPoolHp(b), DATA.bosses[b].bloodPoint[key] * 4, `${modeId} ${b}: no count, a full team`);
-      assert.equal(gd.bossPoolHp(b, 4), DATA.bosses[b].bloodPoint[key] * 4, `${modeId} ${b} four alive`);
-      assert.equal(gd.bossPoolHp(b, 2), DATA.bosses[b].bloodPoint[key] * 2, `${modeId} ${b} two alive: twice the data value`);
+      assert.equal(gd.bossPoolHp(b), Math.round(DATA.bosses[b].bloodPoint[key] * 4 * growth), `${modeId} ${b}: no count, a full team`);
+      assert.equal(gd.bossPoolHp(b, 4), Math.round(DATA.bosses[b].bloodPoint[key] * 4 * growth), `${modeId} ${b} four alive`);
+      assert.equal(gd.bossPoolHp(b, 2), Math.round(DATA.bosses[b].bloodPoint[key] * 2 * growth), `${modeId} ${b} two alive: twice the data value`);
     }
   }
   assert.equal(DATA.config.bossHpScale.perPlayer, true);

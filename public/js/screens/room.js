@@ -26,6 +26,34 @@ import { net } from '../net.js';
 import { store, useStore, shallowEqual, emptyMatch, isSpectating } from '../store.js';
 import { difficultyInfo } from './lobby.js';
 import { t, tc } from '../../../shared/i18n.js';
+import { endlessOptions, ENDLESS_PRESETS, validEndlessOptions } from '../../../shared/endless.js';
+
+function EndlessSettings({ room, isHost, busy, onApply }) {
+  const current = endlessOptions(room.endless);
+  const [draft, setDraft] = useState(current);
+  const changed = Object.keys(current).some(k => current[k] !== draft[k]);
+  const field = (key, label, min, max, step = 1) => html`<label>${label}
+    <input type="number" min=${min} max=${max} step=${step} required value=${draft[key]}
+      disabled=${!isHost || !!busy} onInput=${e => setDraft({ ...draft, [key]: e.currentTarget.value === '' ? '' : Number(e.currentTarget.value) })} />
+  </label>`;
+  return html`<details class="endless-settings">
+    <summary>${t('终极自定义')} · ${t('{n} 回合', { n: current.rounds })} · ${t('第 {n} 回合起加速', { n: current.growthStart })}
+      · ${t('生命 +{hp}% / 攻击 +{atk}%', { hp: current.hpGrowth, atk: current.atkGrowth })}</summary>
+    <form onSubmit=${e => { e.preventDefault(); if (isHost && validEndlessOptions(draft)) onApply(draft); }}>
+      <div class="endless-settings__presets">${ENDLESS_PRESETS.map(n => html`<button type="button" class=${`dpick__opt${draft.rounds === n ? ' is-active' : ''}`}
+        disabled=${!isHost || !!busy} onClick=${() => setDraft({ ...draft, rounds: n })}>${t('{n} 回合', { n })}</button>`)}</div>
+      <div class="endless-settings__fields">
+        ${field('rounds', t('总回合数（20–100）'), 20, 100)}
+        ${field('growthStart', t('难度加速起始回合'), 2, 100)}
+        ${field('hpGrowth', t('每回合生命增长（%）'), 0, 100, 0.1)}
+        ${field('atkGrowth', t('每回合攻击增长（%）'), 0, 100, 0.1)}
+      </div>
+      <p>${t('增长按回合复利计算，替代后期原有增长；生命增长也作用于领袖。最终攻势位于最后一回合，隐秘核心额外增加一回合。')}</p>
+      ${isHost ? html`<${Button} type="submit" disabled=${!changed || !!busy || !validEndlessOptions(draft)} loading=${busy === 'endless'}>${t('应用设置')}<//>
+        <span class="t-dim">${changed ? t('修改后请应用设置') : t('设置已应用')}</span>` : html`<span class="t-dim">${t('由创建者设置')}</span>`}
+    </form>
+  </details>`;
+}
 
 /**
  * Seats padded to the room's capacity (co-op 4, solo 1), each null or a seat record.
@@ -259,6 +287,7 @@ export function RoomScreen() {
     if (ok) run(`kick${seat}`, () => net.request('room.kick', { seat, playerId }));
   };
   const setDifficulty = (difficulty) => run('diff', () => net.request('room.setDifficulty', { difficulty }));
+  const setEndless = (options) => run('endless', () => net.request('room.setEndless', { options }));
   const setAiLast = (on) => run('ailast', () => net.request('room.setAiPicksLast', { on }));
   // spectator seats: the host frees one; a spectator takes a free player seat with room.join of this room
   const removeSpectator = (playerId) => run(`rs${playerId}`, () => net.request('room.removeSpectator', { playerId }));
@@ -330,12 +359,13 @@ export function RoomScreen() {
         <p>${info.desc}</p>
         <ul>
           ${info.effects.map((e) => html`<li key=${e}>${e}</li>`)}
-          <li>${t('共')} <b class="num">${info.rounds}</b> ${tc('rounds', '回合')}${info.hidden ? t('，满足条件时进入隐秘核心') : ''}</li>
+          <li>${t('共')} <b class="num">${room.difficulty === 'ABYSS' ? endlessOptions(room.endless).rounds : info.rounds}</b> ${tc('rounds', '回合')}${info.hidden ? t('，满足条件时进入隐秘核心') : ''}</li>
           <li>${t('独立模拟中休整期与机变阶段不限时')}</li>
         </ul>
       </aside>`}
     </main>
     <${SpectatorBar} facts=${facts} myId=${me.playerId} busy=${busy} onRemove=${removeSpectator} onSit=${sit} />
+    ${room.difficulty === 'ABYSS' ? html`<${EndlessSettings} key=${`${room.code}:${JSON.stringify(room.endless)}`} room=${room} isHost=${facts.isHost} busy=${busy || !online} onApply=${setEndless} />` : null}
 
     <footer class="room-bar">
       <div class="room-bar__left">

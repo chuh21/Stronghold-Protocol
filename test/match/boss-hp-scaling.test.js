@@ -9,12 +9,14 @@ import { GameData } from '../../server/match/gamedata.js';
 import { bossPoolHp, SharedBossPool } from '../../server/match/finalAssault.js';
 import { makeBattle } from '../helpers/battleHarness.js';
 
+// Isolate team-size scaling from the custom late-round growth (tested in endless.test.js).
+const NO_GROWTH = { rounds: 20, growthStart: 15, hpGrowth: 0, atkGrowth: 0 };
 const DIFFS = ['FUNNY', 'NORMAL', 'HARD', 'ABYSS'];
 
 test('every leader and difficulty: bloodPoint × the players alive (co-op), × 1 solo', () => {
   for (const difficulty of DIFFS) {
-    const gd = new GameData(DATA, `mode_multi_${difficulty.toLowerCase()}`);
-    const solo = new GameData(DATA, `mode_single_${difficulty.toLowerCase()}`);
+    const gd = new GameData(DATA, `mode_multi_${difficulty.toLowerCase()}`, NO_GROWTH);
+    const solo = new GameData(DATA, `mode_single_${difficulty.toLowerCase()}`, NO_GROWTH);
     for (const id of Object.keys(DATA.bosses)) {
       const base = DATA.bosses[id].bloodPoint[difficulty];
       for (const n of [1, 2, 3, 4]) assert.equal(bossPoolHp(gd, id, n), base * n, `${id} ${difficulty} ×${n}`);
@@ -61,7 +63,7 @@ test('config restores the fixed pool of 0.1.x (perPlayer false, solo 0.25) — G
   const data = structuredClone(DATA);
   data.config.bossHpScale = { ...data.config.bossHpScale, perPlayer: false, solo: 0.25 };
   for (const modeId of ['mode_single_abyss', 'mode_multi_abyss']) {
-    const gd = new GameData(data, modeId);
+    const gd = new GameData(data, modeId, NO_GROWTH);
     const base = data.bosses.boss_8.bloodPoint.ABYSS;
     const expected = gd.isSolo ? base * 0.25 : base;
     for (const n of [1, 2, 3, 4]) {

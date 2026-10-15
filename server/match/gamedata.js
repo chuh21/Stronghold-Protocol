@@ -4,16 +4,18 @@
 // unknown ids. Tunables come from data/config.json with the documented defaults (research 00-INDEX §2–§8) when a
 // key is missing, so a partial data set (tests, data being regenerated) still yields a working match.
 //
-// No custom balance (DESIGN §14 corrections, research 08 §6): enemy numbers are the official ones — the PRTS
+// Official base balance (DESIGN §14 corrections, research 08 §6): enemy numbers come from the PRTS
 // per-round enemyScale table of data/config.json, the leader pool = bloodPoint per player alive at the fight's start
 // (bossPoolShareOf). data/tuning.json only overrides result titles:
 //   titles[titleId]                                                { stat?, rule? } merged over config.titles
 // (the former enemyHpMul / enemyAtkMul / enemySpeedMul / bossHpMul / flyPlaceholders knobs were removed; a tuning file
 // that still carries them is ignored).
+// [MOD] ABYSS has room-configurable rounds and compounded late growth (DESIGN §6.1, shared/endless.js).
 
 import { getConfig, getMode } from '../data.js';
 import { isShopItem } from '../sim/simdata.js';
 import { standInRecord } from '../../shared/standIn.js';
+import { endlessOptions } from '../../shared/endless.js';
 
 const own = (map, id) => (map && typeof map === 'object' && typeof id === 'string' && Object.hasOwn(map, id) && map[id] && typeof map[id] === 'object' ? map[id] : null);
 const numOr = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
@@ -90,12 +92,15 @@ export class GameData {
   /**
    * @param {Readonly<Record<string, any>>} data server/data.js getData() (may be partial)
    * @param {string} modeId e.g. 'mode_multi_hard'
+   * @param {object|null} [options] validated room endless settings (ABYSS only)
    */
-  constructor(data, modeId) {
+  constructor(data, modeId, options = null) {
     this.raw = data && typeof data === 'object' ? data : {};
     this.config = getConfig(this.raw) || {};
     this.modeId = modeId;
     this.mode = getMode(modeId, this.raw) || {};
+    this.endless = this.difficulty === 'ABYSS' ? endlessOptions(options) : null;
+    if (this.endless) this.mode = this.extendedMode(this.mode);
     this.economy = this.config.economy && typeof this.config.economy === 'object' ? this.config.economy : {};
     const chess = this.raw.chess && typeof this.raw.chess === 'object' ? this.raw.chess : {};
     this._chess = chess;
@@ -132,6 +137,33 @@ export class GameData {
     this._standIns = new Map();
   }
 
+  // [MOD] Preserve the opening rounds, reuse the last ordinary template for extra rounds,
+  // and move the original boss/hidden templates. Generated JSON stays untouched.
+  extendedMode(mode) {
+    const last = this.endless.rounds;
+    const rows = mode.rounds || {};
+    const boss = rows[mode.bossRound];
+    const hidden = rows[mode.hiddenRound];
+    const normalRounds = Object.keys(rows).map(Number).filter(r => rows[r]?.template && !rows[r].isBoss && !rows[r].isHidden).sort((a, b) => a - b);
+    const template = rows[normalRounds.at(-1)];
+    const rounds = {};
+    for (let r = 1; r < last; r++) {
+      const row = rows[r];
+      rounds[r] = { ...(row?.template && !row.isBoss && !row.isHidden ? row : template), isBoss: false, isHidden: false };
+    }
+    rounds[last] = { ...boss, isBoss: true, isHidden: false };
+    if (hidden) rounds[last + 1] = { ...hidden, isBoss: false, isHidden: true };
+    return { ...mode, rounds, lastRound: last, bossRound: last, hiddenRound: hidden ? last + 1 : null };
+  }
+
+  growthFactor(r, key) {
+    if (!this.endless || r < this.endless.growthStart) return 1;
+    // Repeated multiplication keeps the curve explicit and portable.
+    let factor = 1;
+    for (let i = this.endless.growthStart; i <= r; i++) factor *= 1 + this.endless[key] / 100;
+    return factor;
+  }
+
   /**
    * Leader HP pool multiplier — always 1 (no custom balance). Kept for callers written against the old tuning layer
    * (finalAssault.bossPoolHp); use `bossPoolHp` / `bossPoolShare` for the official pool.
@@ -150,15 +182,16 @@ export class GameData {
    * never scaled by enemyScale ("领袖单位于服务器的生命值加成不受上述加成影响").
    * @param {string} bossId
    * @param {number} [aliveCount] alive players at the Final Assault / Hidden Core start (co-op)
+   * @param {number} [round] actual boss round, including the moved Hidden Core
    * @returns {number}
    */
-  bossPoolHp(bossId, aliveCount) {
+  bossPoolHp(bossId, aliveCount, round = this.bossRound) {
     const boss = this.boss(bossId);
     const diff = this.difficulty;
     let base = boss && boss.bloodPoint && Number.isFinite(boss.bloodPoint[diff]) ? boss.bloodPoint[diff] : null;
     if (base == null && boss && boss.bloodPoint) base = Object.values(boss.bloodPoint).find((v) => Number.isFinite(v)) ?? null;
     if (base == null) base = 500000;
-    return Math.max(1, Math.round(base * this.bossPoolShare(aliveCount)));
+    return Math.max(1, Math.round(base * this.bossPoolShare(aliveCount) * this.growthFactor(round, 'hpGrowth')));
   }
 
   /**
@@ -432,9 +465,13 @@ export class GameData {
     };
   }
 
-  /** Enemy multipliers of round r = the official table (baseEnemyScale; no custom multiplier). */
+  /** Official opening stats, with the local custom late curve in ABYSS. */
   enemyScale(r) {
-    return this.baseEnemyScale(r);
+    if (!this.endless) return this.baseEnemyScale(r);
+    // [ASSUMED] The custom curve replaces late-round table growth; R15 anchors at R14.
+    const anchor = Math.min(r, this.endless.growthStart - 1, 14);
+    const base = this.baseEnemyScale(anchor);
+    return { ...base, hpMul: base.hpMul * this.growthFactor(r, 'hpGrowth'), atkMul: base.atkMul * this.growthFactor(r, 'atkGrowth') };
   }
 
   timer(key) {

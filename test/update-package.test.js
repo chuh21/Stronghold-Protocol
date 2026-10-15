@@ -13,7 +13,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import zlib from 'node:zlib';
-import { APPLIED_FILE, MANIFEST_FILE, UPDATE_FILE, applyPendingUpdate, checkInstall, parseUpdate, removalProblem } from '../server/update.js';
+import { APPLIED_FILE, MANIFEST_FILE, UPDATE_FILE, applyPendingUpdate, checkInstall, parseManifest, parseUpdate, removalProblem } from '../server/update.js';
 import { compareVersions, diffBases, readBase, readZip } from '../tools/package-update.mjs';
 import { FOLDER, readBases, scanFiles, stageProblems, zipFolder } from '../tools/package.mjs';
 
@@ -86,7 +86,21 @@ test('versions compare numerically, a pre-release before its release', () => {
   assert.equal(compareVersions('0.2.1-test', '0.2.1'), -1);
   assert.equal(compareVersions('0.2.0', '0.2.1-test'), -1);
   assert.equal(compareVersions('1.0.0', '1.0.0'), 0);
+  assert.equal(compareVersions('0.2.6', '0.2.6.1'), -1);
+  assert.equal(compareVersions('0.2.6.2', '0.2.6.10'), -1);
+  assert.equal(compareVersions('0.2.6.10', '0.2.7'), -1);
+  assert.equal(compareVersions('0.2.6.0', '0.2.6'), 0);
+  assert.equal(compareVersions('0.2.6.1-dev', '0.2.6.1'), -1);
+  assert.throws(() => compareVersions('0.2.6.1.1', '0.2.6'));
   assert.throws(() => compareVersions('x', '1.0.0'));
+});
+
+test('four-part revisions round-trip through manifest and update metadata', () => {
+  const head = { format: 1, app: '0.2.6.1', files: {} };
+  assert.equal(parseManifest(JSON.stringify(head)).app, '0.2.6.1');
+  const update = { ...head, from: ['0.2.6', '0.2.6.0'], count: 0, bytes: 0, removed: [] };
+  assert.equal(parseUpdate(JSON.stringify(update)).app, '0.2.6.1');
+  assert.throws(() => parseManifest(JSON.stringify({ ...head, app: '0.2.6.1.1' })));
 });
 
 // ---------------------------------------------------------------------------------------------------------------------

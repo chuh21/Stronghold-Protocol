@@ -30,6 +30,14 @@
 import { useEffect, useReducer } from '../vendor/hooks.module.js';
 import { applyFileOverlay } from '../../shared/i18nData.js';
 import { canonicalLang } from '../../shared/i18nPacks.js';
+import { t } from '../../shared/i18n.js';
+
+// [MOD] Display the owner-requested personnel-document rule over the official data texts.
+function itemUiRecord(rec) {
+  if (!rec?.buffs?.some(b => b.key === 'equip_destory_deployment_cnt_change')) return rec;
+  const desc = t('使用后销毁，可部署干员数增加 1，可重复使用，上限为 13。');
+  return { ...rec, desc, descRaw: desc };
+}
 
 /** Known data files (name → URL basename). Unknown names are allowed too (`/data/<name>.json`). */
 export const DATA_FILES = Object.freeze({
@@ -319,7 +327,8 @@ export function createDataStore(opts = {}) {
     /** Record by id from a loaded file (null when unknown / not loaded). */
     lookup(name, id) {
       if (id == null) return null;
-      return index(name)?.get(String(id)) ?? null;
+      const rec = index(name)?.get(String(id)) ?? null;
+      return name === 'items' ? itemUiRecord(rec) : rec;
     },
     /**
      * Record by id from a loaded file exactly as downloaded (its Chinese texts), whatever the locale — what the server
@@ -333,7 +342,7 @@ export function createDataStore(opts = {}) {
       return e.index.get(String(id)) ?? null;
     },
     /** All records of a loaded file as an array (empty when not loaded). */
-    list: (name) => [...(index(name)?.values() ?? [])],
+    list: (name) => [...(index(name)?.values() ?? [])].map(rec => name === 'items' ? itemUiRecord(rec) : rec),
     /** Drop a cached file and refetch it now (subscribers are notified when it settles). */
     invalidate(name) {
       if (!entries.has(name)) return Promise.resolve(null);
