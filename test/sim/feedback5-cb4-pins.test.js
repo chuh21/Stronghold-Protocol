@@ -34,14 +34,14 @@ import { planUnite } from '../../server/match/unite.js';
 import { createRng } from '../../server/sim/rng.js';
 import { DATA, makeMatch } from '../match/harness.js';
 
-test('item 6: the three briefing types fill 7–9 of the 13 normal waves (险境 / 绝境 / 终极), at most 3 each; the rest are SPECIAL', () => {
+test('item 6: the three briefing types fill 7–9 of the first 13 normal waves (险境 / 绝境 / 终极), at most 3 each; the rest are SPECIAL', () => {
   for (const modeId of ['mode_multi_normal', 'mode_single_hard', 'mode_multi_abyss']) {
     const gd = new GameData(DATA, modeId);
-    assert.equal(gd.bossRound, 14);
+    assert.equal(gd.bossRound, modeId.endsWith('_abyss') ? 20 : 14);
     const totals = new Set();
     for (let seed = 1; seed <= 200; seed++) {
       const s = setupMatchWaves(gd, createRng(seed));
-      const normal = s.typeSlots.slice(0, gd.bossRound - 1);
+      const normal = s.typeSlots.slice(0, 13);
       const per = s.factions.map((f) => normal.filter((t) => t === f).length);
       for (const n of per) assert.ok(n >= 1 && n <= 3, `${modeId} seed ${seed}: ${per}`);
       const total = per.reduce((a, b) => a + b, 0);

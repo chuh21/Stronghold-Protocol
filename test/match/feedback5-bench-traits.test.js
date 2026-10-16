@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Community report relayed by the owner (2026-10-07): 「有的时候在备战区的干员不能100%叠层…小拉和赫默有概率在备战区叠不上叙拉古
 // 和远见」 — 拉普兰德 (小拉, Ⅱ) in the 整备区 sometimes adds no 【叙拉古】 layers, 赫默 (Ⅱ) no 【远见】 layers. Reproduced over
 // whole matches (scratchpad notes, R19F): every non-firing case is a rule of the official data, nothing random —
@@ -11,7 +12,7 @@
 // Through the real match paths (g.refresh / g.buy / g.move, the round loop's ROUND_START dispatch). Pins; no change.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeMatch, give, legalTileFor, checkInvariants, chessOfTier, DATA } from './harness.js';
+import { makeThreeCopyMatch as makeMatch, give, legalTileFor, checkInvariants, chessOfTier, DATA } from './harness.js';
 import { createRegistry } from '../../server/match/effectsMeta.js';
 
 const QUIET = { warn() {}, error() {}, info() {} };

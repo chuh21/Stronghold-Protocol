@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // User playtest #6 follow-up — a merge's elite goes to the board when it consumed a deployed copy. The user (first-hand,
 // official game): "官方就是合成精锐时，如果消耗了场上的干员，精锐会出现在场上那个位置". PRTS 卫戍协议/帮助 §干员的获得与精锐化:
 // "不获得第3名干员，销毁已有的2名初始干员，发送1名【精锐】状态的该干员至手牌区（若消耗已部署至作战区的干员，则发送至作战区
@@ -11,7 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ERR, PHASE } from '../../shared/constants.js';
 import { checkLoadout } from '../../shared/protocol.js';
-import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, giveItem, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
 import { canPlace, placeClass, tileKey, mergeTile } from '../../server/match/board.js';
 import { makeCtx } from '../../server/match/effectsMeta.js';
 import { attachAudit } from '../../server/match/audit.js';
@@ -182,7 +183,7 @@ test('equipment: the consumed copies\' items return to the hand, the elite on th
   m.dispose();
 });
 
-test('equipment with the hand and temp full: the elite keeps up to its 2 equip slots, any further item is destroyed (logged)', () => {
+test('equipment with a full visible bench: all four returned items remain in the overflow queue', () => {
   const { m, ps } = prep({ seed: 47 });
   const [id] = meleeTier1(m);
   const a = deploy(m, ps, id, 'UP');
@@ -204,11 +205,10 @@ test('equipment with the hand and temp full: the elite keeps up to its 2 equip s
   m.log.warn = warn;
   const elite = ps.board.get(want);
   assert.ok(elite && m.gd.isGolden(elite.id), 'the elite took the first deployed copy\'s tile');
-  assert.equal(elite.items.length, m.gd.equipPerChess, 'it keeps 2 of the 4 returned items');
-  const kept = new Set(elite.items.map((it) => it.uid));
-  assert.ok([...kept].every((u) => its.some((it) => it.uid === u)), 'the kept items are returned ones');
-  assert.equal(its.filter((it) => !kept.has(it.uid) && ps.find(it.uid)).length, 0, 'the other two are nowhere (hand, temp, board)');
-  assert.equal(warns.filter((s) => /returned item .* destroyed \(no space\)/.test(s)).length, ids.length - m.gd.equipPerChess, 'the other two are destroyed with a log warning');
+  assert.deepEqual(elite.items, []);
+  for (const item of its) assert.equal(ps.find(item.uid).piece, item);
+  assert.equal(ps.temp.length, 9);
+  assert.deepEqual(warns, []);
   checkInvariants(m);
   m.dispose();
 });
@@ -467,7 +467,7 @@ test('audit.js passes transformations that complete a merge (突变细胞 ctx.tr
   }
 });
 
-test('a deployed copy on a tile its elite may not use (terrain changed, not re-checked yet) is skipped: hand, or the tile when nothing has room', () => {
+test('an elite skips illegal tiles after terrain changes: hand first, then the expandable temp queue', () => {
   for (const full of [false, true]) {
     const label = full ? 'hand and temp full' : 'room';
     const { m, ps } = prep({ seed: 54 });
@@ -489,9 +489,8 @@ test('a deployed copy on a tile its elite may not use (terrain changed, not re-c
     if (!full) {
       assert.equal(loc.area, 'hand', `${label}: the illegal tiles are skipped, the elite goes to the hand`);
     } else {
-      // never lost: it stays on the first deployed copy's tile, like a piece the eviction finds no room for
-      assert.equal(loc.area, 'board', `${label}: kept on the board`);
-      assert.equal(loc.key, mergeTile(tiles.map((key) => ({ key }))).key);
+      assert.equal(loc.area, 'temp', `${label}: retained without occupying an illegal tile`);
+      assert.equal(ps.temp.length, 6);
       assert.equal(elite.poolCopies, 3);
     }
     m.dispose();

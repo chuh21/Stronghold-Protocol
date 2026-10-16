@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Community reports of 2026-10-06 that are the official behaviour (items 45, 49, 50) — pinned so the answer stays true.
 //   49 「炎祐能吃到掉血道具的效果」: PRTS 卫戍协议：盟约 下半/PRTS盟约记录, 源石溶剂 备注 「携带后，全场范围内的所有敌人类我方单位也会
 //      获得此装备的“每秒受到60真实伤害”效果（该效果的付与为我方阵营索敌，可对空，无视目标可选性）」 — the 炎佑 is one (no ATK bonus).
@@ -12,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeBattle } from '../helpers/battleHarness.js';
-import { makeMatch } from '../match/harness.js';
+import { makeThreeCopyMatch as makeMatch } from '../match/harness.js';
 import { hasGeneratedData } from '../../server/sim/simdata.js';
 
 const REAL = { skip: !hasGeneratedData() };

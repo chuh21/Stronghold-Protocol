@@ -1,10 +1,11 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Equipment (56 EQUIP, normal + golden) and the 3 Arts: battle side (server/sim/content/items/battle.js) with synthetic
 // operators / enemies for exact numbers, prep side (items/meta.js + the engine built-ins it keeps) through the real
 // registry and dispatcher. Numbers are the data blackboards (research 04 §3–§7); every item key is covered (last test).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeBattle, chessRec, enemyRec, checkInvariants } from '../helpers/battleHarness.js';
-import { makeMatch, give, giveItem, DATA, legalTileFor } from '../match/harness.js';
+import { makeThreeCopyMatch as makeMatch, give, giveItem, DATA, legalTileFor } from '../match/harness.js';
 import { createRegistry } from '../../server/match/effectsMeta.js';
 import { lendItemEffects, itemGrants, PRIO_REVIVE } from '../../server/sim/content/items/battle.js';
 import { unitBonds } from '../../server/sim/content/support/index.js';

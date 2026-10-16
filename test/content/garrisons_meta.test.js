@@ -1,9 +1,10 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Prep-side 特质 (server/sim/content/garrisons/meta.js) through the real registry and dispatcher. Every SERVER_* garrison
 // id carried by a chess (visible ones required, hidden ones where they share a key) is exercised with its own blackboard
 // numbers; one normal and one elite id per key are also asserted with literal numbers. The last test checks coverage.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeMatch, give, giveItem, DATA } from '../match/harness.js';
+import { makeThreeCopyMatch as makeMatch, give, giveItem, DATA } from '../match/harness.js';
 import { createRegistry } from '../../server/match/effectsMeta.js';
 import { triggerGainEffects } from '../../server/sim/content/garrisons.js';
 

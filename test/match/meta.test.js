@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Effect registry & dispatcher (effectsMeta.js): keys, hook routing, garrison eventType mapping, 投资人 repeat,
 // ctx helpers, error isolation, depth cap, content override of built-ins.
 import { test } from 'node:test';
@@ -5,7 +6,7 @@ import assert from 'node:assert/strict';
 import { MetaRegistry, createRegistry, HOOKS, GARRISON_HOOK, MAX_DEPTH } from '../../server/match/effectsMeta.js';
 import { registerBuiltins, BUILTIN_EFFECT_KEYS } from '../../server/match/builtinMeta.js';
 import { PHASE } from '../../shared/constants.js';
-import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
 
 test('registry: key validation, function sugar, last registration wins, helpers', () => {
   const reg = new MetaRegistry();

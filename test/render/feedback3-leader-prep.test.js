@@ -33,7 +33,7 @@ test('the preview of a boss round carries the leader\'s spawn tile; other entrie
   const setup = setupMatchWaves(gd, createRng(1));
   for (const bossId of Object.keys(gd.mode.bossWeights)) {
     for (const solo of [false, true]) {
-      const w = buildBossWave(gd, createRng(1), setup.factions, 14, { bossId, solo });
+      const w = buildBossWave(gd, createRng(1), setup.factions, gd.bossRound, { bossId, solo });
       const boss = previewOf(w.spawns).filter((e) => e.boss);
       assert.ok(boss.length >= 1, `${w.templateId}: a leader`);
       const route = DATA.waves[w.templateId].routes[w.spawns.find((s) => s.tag === 'boss').routeIndex];

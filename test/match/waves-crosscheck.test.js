@@ -137,7 +137,7 @@ test('preview zones: target row = start row + 6 (leader rounds + 13), upper zone
   const e = DATA.factions.entries.enemy_1005_yokai_3;
   picks[14] = pickOf(e, 14);
   picks[15] = pickOf(e, 15);
-  const hidden = buildBossWave(gd, createRng(1), { picks }, 15, { bossId: 'boss_9', solo: false });
+  const hidden = buildBossWave(gd, createRng(1), { picks }, gd.hiddenRound, { bossId: 'boss_9', solo: false, hidden: true });
   assert.equal(hidden.templateId, 'act1autochess_h08_02');
   const boss = hidden.spawns.find((s) => s.tag === 'boss');
   assert.deepEqual(DATA.waves.act1autochess_h08_02.routes[boss.routeIndex].start, [4, 10]);
@@ -237,9 +237,10 @@ test('bounty units are inserted among the host action\'s own units (decoded _Ins
 
 test('a bounty whose host action is not server-sent (the leader) spawns alone over that window; the leader is never re-timed', () => {
   const gd = new GameData(DATA, 'mode_multi_hard');
+  const round = gd.hiddenRound;
   const picks = [];
-  picks[15] = pickOf(DATA.factions.entries.enemy_1006_shield_3, 15);
-  const w = buildBossWave(gd, createRng(1), { picks }, 15, { bossId: 'boss_9', solo: false });
+  picks[round] = pickOf(DATA.factions.entries.enemy_1006_shield_3, round);
+  const w = buildBossWave(gd, createRng(1), { picks }, round, { bossId: 'boss_9', solo: false, hidden: true });
   const tpl = DATA.waves[w.templateId];
   assert.equal(tpl.spawns[0].tag, 'boss', 'h08_02: action 0 is the leader (no lrsldr action ⇒ the host is action 0)');
   assert.equal(w.actions.find((a) => a.index === 0).server, false);
@@ -265,11 +266,12 @@ test('round multipliers hit every enemy but 炎佑 (aceffect_enemy_* enemy_exclu
     assert.ok(!leaders.some((k) => ex.includes(k)), `${id}: no leader excluded`);
   }
   const gd = new GameData(DATA, 'mode_multi_abyss');
-  const scale = gd.enemyScale(15);
+  const round = gd.hiddenRound;
+  const scale = gd.enemyScale(round);
   assert.ok(scale.atkMul > 2 && scale.speedMul > 1, 'sanity: 终极 hidden round multipliers');
   const picks = [];
-  picks[15] = pickOf(DATA.factions.entries.enemy_1006_shield_3, 15);
-  const w = buildBossWave(gd, createRng(1), { picks }, 15, { bossId: 'boss_9', solo: false });
+  picks[round] = pickOf(DATA.factions.entries.enemy_1006_shield_3, round);
+  const w = buildBossWave(gd, createRng(1), { picks }, round, { bossId: 'boss_9', solo: false, hidden: true });
   const boss = w.spawns.find((s) => s.tag === 'boss');
   assert.equal(boss.mods.hpMul, undefined, 'the leader HP is the server pool');
   assert.equal(boss.mods.atkMul, scale.atkMul);

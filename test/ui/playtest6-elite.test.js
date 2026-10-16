@@ -1,3 +1,4 @@
+// Explicit official three-copy fixtures for UI/server agreement; custom defaults are tested in endless.e2e.test.js.
 // User playtest #6 follow-up, client side of "合成精锐时，如果消耗了场上的干员，精锐会出现在场上那个位置" (PRTS 卫戍协议/帮助
 // "若消耗已部署至作战区的干员，则发送至作战区对应位置"; server PlayerState._mergeChess / board.js mergeTile):
 //   * gameLogic.mergeTarget mirrors the server: the tile of the deployed copy that deploys first (row desc, col asc)
@@ -30,7 +31,7 @@ const { mergeTarget, mergeProgress } = await import('../../public/js/ui/gameLogi
 const { ChessCard, armedSlotOf, armKey, mergeHint } = await import('../../public/js/ui/shopBar.js');
 const { ChessDetail, resolveDetail } = await import('../../public/js/ui/detailPanel.js');
 const { data } = await import('../../public/js/data.js');
-const { DATA, makeMatch, give } = await import('../match/harness.js');
+const { DATA, makeThreeCopyMatch: makeMatch, give } = await import('../match/harness.js');
 
 await data.loadAll('chess', 'bonds', 'assets');
 

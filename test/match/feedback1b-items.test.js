@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Player report after the public 0.1.0 release (relayed, untested by the user): "源石溶剂两个白的合成一个金色的之后又多给一个白的"
 // — after two white 源石溶剂 (chess_item_1_05_e_a) merged into the golden one (_b), an extra white appeared.
 // Official rule (PRTS 卫戍协议/帮助 §装备; activity_table act2autochess trapChessDataDict upgradeNum 2 → _b): "已拥有2件同一初始
@@ -8,7 +9,7 @@
 // to the hand skipped the auto-merge — unreachable from a normal state (a pair never exists), closed anyway.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DATA, makeMatch, give, giveItem, legalTileFor, checkInvariants } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, giveItem, legalTileFor, checkInvariants } from './harness.js';
 import { tileKey } from '../../server/match/board.js';
 import { applyCard } from '../../server/match/choices.js';
 import { makeCtx } from '../../server/match/effectsMeta.js';

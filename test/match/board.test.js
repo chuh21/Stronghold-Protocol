@@ -1,10 +1,11 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Board placement legality (stage legend), deploy cap, move semantics, placeable summons (DESIGN §3, research 03 C2).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildDeployMap, canPlace, legalTiles, tileKey, positionClass, basePositionClass } from '../../server/match/board.js';
 import { applyCard } from '../../server/match/choices.js';
 import { ERR } from '../../shared/constants.js';
-import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, giveItem, checkInvariants, chessOfTier } from './harness.js';
 
 const MELEE = (c) => c.position === 'MELEE';
 const RANGED = (c) => c.position === 'RANGED';

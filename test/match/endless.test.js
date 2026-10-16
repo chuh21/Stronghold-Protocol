@@ -6,6 +6,53 @@ import { setupMatchWaves, buildNormalWave, buildBossWave } from '../../server/ma
 import { ENDLESS_DEFAULTS, validEndlessOptions } from '../../shared/endless.js';
 import { validateC2S } from '../../shared/protocol.js';
 import { DATA, makeMatch } from './harness.js';
+import { wireOptions } from '../../server/match/host/proxy.js';
+
+test('default two-copy promotion keeps the deployed tile, equipment and actual stock accounting', () => {
+  const h = makeMatch({ mode: 'solo', fake: true }).start().toPrep(1);
+  try {
+    const m = h.m, ps = h.ps('p_0'), id = 'chess_char_1_06_a';
+    for (const p of ps.allChess()) ps.returnCopies(p);
+    ps.board.clear(); ps.hand.fill(null); ps.temp.fill(null); ps.bandId = null; ps.recompute();
+    h.setStage('act2autochess_m04');
+    assert.equal(m.gd.mergeCount(id), 2);
+    const cap = m.pool.left(id);
+    const first = ps.acquireChess(id, { silent: true });
+    assert.deepEqual(m.handle(ps.playerId, { t: 'g.move', uid: first.uid, to: { area: 'board', row: 9, col: 3 }, dir: 'UP' }), { ok: true });
+    const item = ps.acquireItem('chess_item_1_01_e_a', { silent: true });
+    assert.deepEqual(ps.equip(item.uid, first.uid), { ok: true });
+    const elite = ps.acquireChess(id, { silent: true });
+    assert.equal(elite.id, m.gd.goldenIdOf(id));
+    assert.equal(ps.board.get('9,3'), elite);
+    assert.equal(elite.dir, 'UP');
+    assert.equal(ps.find(first.uid), null);
+    assert.equal(elite.poolCopies, m.gd.goldenCopies);
+    assert.equal(m.pool.left(id), cap - m.gd.goldenCopies);
+    assert.ok(ps.hand.includes(item), 'equipment returns to the hand');
+    assert.equal(ps.stats.merges, 1);
+    assert.deepEqual(ps.sell(elite.uid), { ok: true });
+    assert.equal(m.pool.left(id), cap, 'selling returns all copies charged by the existing elite-stock rule');
+  } finally { h.m.dispose(); }
+});
+
+test('two-copy promotion also merges hidden overflow without losing queued resources', () => {
+  const h = makeMatch({ mode: 'solo', fake: true }).start().toPrep(1);
+  try {
+    const m = h.m, ps = h.ps('p_0'), id = 'chess_char_1_06_a';
+    for (const p of ps.allChess()) ps.returnCopies(p);
+    ps.board.clear(); ps.hand.fill(null); ps.temp.fill(null); ps.bandId = null; ps.recompute();
+    const fillers = Array.from({ length: 24 }, () => ps.acquireItem('chess_item_2_03_e_b', { silent: true }));
+    assert.ok(fillers.every(Boolean));
+    const first = ps.acquireChess(id, { silent: true });
+    assert.ok(ps.temp.indexOf(first) >= 5);
+    const elite = ps.acquireChess(id, { silent: true });
+    assert.equal(elite.id, m.gd.goldenIdOf(id));
+    assert.equal(ps.find(first.uid), null);
+    assert.ok(ps.temp.indexOf(elite) >= 5);
+    for (const p of fillers) assert.equal(ps.find(p.uid).piece, p);
+    assert.equal(ps.temp.filter(Boolean).length, 15);
+  } finally { h.m.dispose(); }
+});
 
 test('custom settings reject malformed, non-finite and out-of-range values', () => {
   assert.equal(validateC2S({ t: 'room.setEndless', options: ENDLESS_DEFAULTS }), null);
@@ -16,6 +63,24 @@ test('custom settings reject malformed, non-finite and out-of-range values', () 
     assert.equal(validEndlessOptions(bad), false);
     assert.notEqual(validateC2S({ t: 'room.setEndless', options: bad }), null);
   }
+});
+
+test('0.3.0 host IPC carries custom Ultimate settings, while plugin modes retain their own schedule and globals', () => {
+  const options = { ...ENDLESS_DEFAULTS, rounds: 40 };
+  const wire = wireOptions({ modeId: 'mode_multi_abyss', endless: options, send() {} });
+  assert.deepEqual(JSON.parse(JSON.stringify(wire)).endless, options);
+  assert.equal('send' in wire, false);
+  const customMode = { ...DATA.config.modes.mode_single_abyss, modeId: 'mode_x_demo_abyss', lastRound: 7, bossRound: 7, hiddenRound: null,
+    economy: { deployCap: 11, mergeCountOverrides: { chess_char_1_01_a: 4 } } };
+  const data = { ...DATA, config: { ...DATA.config, modes: { ...DATA.config.modes, mode_x_demo_abyss: customMode } } };
+  const gd = new GameData(data, 'mode_x_demo_abyss', options);
+  assert.equal(gd.endless, null);
+  assert.equal(gd.lastRound, 7);
+  assert.equal(gd.bossRound, 7);
+  assert.equal(gd.hiddenRound, null);
+  assert.equal(gd.deployCap, 11);
+  assert.equal(gd.mergeCount('chess_char_1_01_a'), 4);
+  assert.equal(new GameData(DATA, 'mode_single_abyss', wire.endless).lastRound, 40);
 });
 
 for (const mode of ['single', 'multi']) for (const rounds of [20, 30, 40, 50, 37, 100]) {

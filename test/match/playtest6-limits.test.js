@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Official limits on the match side (docs/research/11-limits-official.md): bond layers stop at 999 per bond
 // (shared/constants.js BOND_LAYER_CAP: PlayerState.addLayers, the settle of the in-battle gains, the client-result
 // check, the invariants) and the boss-hit limit 限伤 (BOSS_HIT_LIMIT 300000) in a real Final Assault / Hidden Core with a
@@ -11,7 +12,7 @@ import { validateClientResult } from '../../server/match/fields.js';
 import { collectViolations } from '../../server/match/invariants.js';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { makeMatch, give, legalTileFor, DATA } from './harness.js';
+import { makeThreeCopyMatch as makeMatch, give, legalTileFor, DATA } from './harness.js';
 import { planBoard, applyBoard, makeMatch as balanceMatch, withoutTuning } from '../../tools/balance.mjs';
 import { buildNormalWave } from '../../server/match/waves.js';
 import { createRng } from '../../server/sim/rng.js';

@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // The data behind the watched player's bond strip (DESIGN §20.15, user report after playtest #6): what the server
 // sends of every player's bonds and what the browser's battle runner adds live.
 //   * m.public players[].bonds = every bond with members, layers or an active tier — the player's own m.private list
@@ -20,7 +21,7 @@ import { createBattleRunner } from '../../public/js/battle/runner.js';
 import { createStore, initialState } from '../../public/js/store.js';
 import * as specMod from '../../server/sim/spec.js';
 import { DataSource } from '../../server/sim/simdata.js';
-import { DATA, makeMatch, checkInvariants, legalTileFor } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, checkInvariants, legalTileFor } from './harness.js';
 import { FakeBattle } from './fakeBattle.js';
 import { ownerBoard } from '../../public/js/ui/watchBonds.js';
 import { bondMembers, diyGetter, diyRecordFor, memberHeadCount } from '../../public/js/ui/gameLogic.js';

@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // 4-direction facing on the match side (research 09 §1.2 / §6.1 items 1–4, DESIGN §3): g.move / g.art `dir` (protocol
 // validation, default RIGHT), piece.dir stored and kept across rounds, in-place re-orientation, swaps keep each dir,
 // effect-placed pieces keep the tile's dir, m.private / battle input / BattleSpec carry dir, 画卷 front by dir, the Final
@@ -11,7 +12,7 @@ import { bossFieldPlacement } from '../../server/match/finalAssault.js';
 import { planLayout, rangeTiles, LAYOUT_PARAMS, fieldModel, airflowAtkMul } from '../../server/match/bot.js';
 import { buildBattleSpec, createBattleFromSpec } from '../../server/sim/spec.js';
 import { makeBattle, chessRec } from '../helpers/battleHarness.js';
-import { DATA, makeMatch, give, giveItem, chessOfTier, checkInvariants, legalTileFor } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, giveItem, chessOfTier, checkInvariants, legalTileFor } from './harness.js';
 
 const OK = { ok: true };
 const MELEE = (c) => c.position === 'MELEE';

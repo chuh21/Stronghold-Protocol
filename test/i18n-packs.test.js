@@ -418,7 +418,10 @@ test('tools: template writes a skeleton (or adds the missing msgids to a pack), 
   const used = new Map([['开始', { where: 'a.js:1', params: [] }], ['还剩 {n} 秒', { where: 'b.js:2', params: new Set(['n']) }], ['{n} 名', { where: 'c.js:3', params: new Set(['n', 'count']) }], ['表里的', { where: 'd.js:4', params: null }]]);
   const skel = packTemplate('qaa', { msgids: [...used.keys()] });
   assert.deepEqual(Object.keys(skel.json), ['_meta', '开始', '还剩 {n} 秒', '{n} 名', '表里的']);
-  assert.deepEqual([skel.json._meta.type, skel.json._meta.lang, skel.json._meta.fallback, skel.json._meta.app], ['lang', 'qaa', ['en'], `>=${APP_VERSION.replace(/-.*$/, '')}`], 'this release and later (tools/i18n.mjs appRange)');
+  const pluginVersion = APP_VERSION.match(/^\d+\.\d+\.\d+/)[0];
+  assert.deepEqual([skel.json._meta.type, skel.json._meta.lang, skel.json._meta.fallback, skel.json._meta.app], ['lang', 'qaa', ['en'], `>=${pluginVersion}`], 'plugin ranges use the upstream three-part version');
+  assert.equal(isVersionRange(skel.json._meta.app), true);
+  assert.equal(appVersionMatches(skel.json._meta.app, APP_VERSION), true, 'custom fourth revision remains compatible');
   assert.equal(packTemplate('zh-TW', { msgids: [] }).json._meta.fallback.length, 0, 'a Chinese variant falls back to the Chinese msgid');
   assert.equal(skel.json['开始'], '');
   const again = packTemplate('qaa', { existing: { _meta: { name: 'Mine' }, 开始: 'Los', 旧的: 'alt' }, msgids: [...used.keys()], fill: { 还剩: 'x' } });

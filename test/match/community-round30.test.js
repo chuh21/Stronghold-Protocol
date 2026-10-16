@@ -1,6 +1,7 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DATA, makeMatch, give, checkInvariants } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, checkInvariants } from './harness.js';
 import { GameData } from '../../server/match/gamedata.js';
 import { computeBonds } from '../../server/match/bondsMeta.js';
 

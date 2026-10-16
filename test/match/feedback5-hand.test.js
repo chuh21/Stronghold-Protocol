@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // GitHub #82 (second part): the hand rules of PRTS 卫戍协议/帮助 §手牌区 — "手牌区域分为10个常规手牌区和5个临时手牌区。当
 // 常规手牌区全满无空位时，玩家将无法执行使手牌溢出的操作" ("例如招募/购入等通常情况下会增加手牌的操作") and "溢出单位会自动
 // 进入临时手牌区，常规手牌区出现空位时自动移入".
@@ -10,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ERR } from '../../shared/constants.js';
-import { DATA, makeMatch, give, giveItem, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
+import { DATA, makeThreeCopyMatch as makeMatch, give, giveItem, checkInvariants, chessOfTier, legalTileFor } from './harness.js';
 
 /** Plain equipment (no equip / merge side effects), all different: hand fillers that never merge with each other. */
 const PLAIN = Object.values(DATA.items)

@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // 变形同构体 and the bond member count on the real match paths (player report after 0.1.0: "缪尔赛思的变形同构体配上对应
 // 职业转职的装备能使装备的干员吃到对应盟约的加成，但是那个盟约的人口数量没有把转职之后的干员算进去").
 // Official rule: band 变形者集群 "与特定装备一同装备时装备者将视为特定盟约成员"; the item's talent (character_table
@@ -9,7 +10,7 @@
 // client now gets with a teammate's units (prep scouting UnitInfo, the battle's UnitInfo).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeMatch, give, giveItem, DATA, legalTileFor } from './harness.js';
+import { makeThreeCopyMatch as makeMatch, give, giveItem, DATA, legalTileFor } from './harness.js';
 import { unitBonds, isMember } from '../../server/sim/content/support/index.js';
 import { unitInfo } from '../../server/sim/snapshot.js';
 

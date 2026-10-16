@@ -1,3 +1,4 @@
+// Preserve the upstream three-copy regression fixture; custom two-copy coverage lives in endless.test.js.
 // Player feedback after 0.1.0 (workstream WA, match-side effects), through the real match paths (g.refresh / g.buy /
 // g.move / g.equip, the round loop's SETTLE):
 //   #1 拉普兰德 garrison_123 "<刷新时>若为本回合首次主动刷新，使已激活的【叙拉古】层数+4(+8)，此干员在整备区时也有效": the
@@ -12,7 +13,7 @@
 //      new operator waits on the bench; pointed out in PR #2). Bots / AI 托管 deploy it in their normal placement step.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeMatch, give, giveItem, legalTileFor, checkInvariants, DATA } from './harness.js';
+import { makeThreeCopyMatch as makeMatch, give, giveItem, legalTileFor, checkInvariants, DATA } from './harness.js';
 import { createRegistry } from '../../server/match/effectsMeta.js';
 import { botPrep, botPrepEnd, cellTarget } from '../../server/match/bot.js';
 import { mergeTile } from '../../server/match/board.js';
@@ -219,6 +220,36 @@ for (const variant of ['a new copy', 'a copy that completes the elite']) {
   });
 }
 
+// GitHub #627: the gift falls on the round's FIRST refresh while two 拉普兰德 stand there unrefreshed. The band step runs
+// before the garrisons, so the gift completes the elite first and consumes both copies; they witnessed the refresh and
+// still add their layers (+4 each), and the elite — a new 拉普兰德 — adds +8 on its own first refresh, the next one.
+for (const where of ['hand', 'board']) {
+  test(`#627 贾维's gift on the round's first refresh: the two 拉普兰德 it merges still fire (${where})`, () => {
+    const s = setup();
+    const { m, ps } = s;
+    ps.bandId = 'band_chiave';
+    ps.shop.level = 2;
+    const roll = m.pool.roll.bind(m.pool);
+    m.pool.roll = (rng, opts = {}) => (rng === m.rngMeta && typeof opts.filter === 'function' && opts.filter(LAP) ? LAP : roll(rng, opts));
+    s.activate();
+    for (let i = 0; i < 2; i++) {
+      const p = give(m, ps, LAP, 'hand');
+      if (where === 'board') s.place(p);
+    }
+    ps.counters['band:chiave:refreshes'] = 5;   // this round's first manual refresh is the match's 6th
+    s.refresh();
+    assert.ok(ps.allChess().some((p) => p.id === LAP_B) && !ps.allChess().some((p) => p.id === LAP), 'the gift completed the elite');
+    assert.equal(s.L(), 8, 'both copies fired in the refresh they saw');
+    s.refresh();
+    assert.equal(s.L(), 16, 'the elite fires on its own first refresh');
+    s.refresh();
+    assert.equal(s.L(), 16, 'once a round');
+    assert.equal(m.dispatcher.errors, 0);
+    checkInvariants(m);
+    m.dispose();
+  });
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 // #4 突变细胞
 
@@ -366,7 +397,7 @@ test('#4 hand full: the returned cell takes the last hand slot, the new operator
   m.dispose();
 });
 
-test('#4 hand and temp full: the gained operator follows the no-room rule of every gain (back to the pool, the same toast); the carrier is destroyed all the same', () => {
+test('#4 full visible bench: transformation queues both the gained operator and the returned cell', () => {
   const s = setup({ seed: 11 });
   const { h, m, ps } = s;
   const t2 = plainOf(m, 2)[0];
@@ -386,12 +417,12 @@ test('#4 hand and temp full: the gained operator follows the no-room rule of eve
   assert.ok(!ps.board.has(at), 'the carrier is destroyed wherever it stands');
   assert.equal(ps.deployCount, 0);
   assert.equal(m.pool.left(t2), left2 + 1, 'its copy went back to the pool');
-  assert.ok(!ps.allChess().some((p) => p.id === t3), 'no slot anywhere: the gained operator is not kept');
-  assert.equal(m.pool.left(t3), left0, 'its copy went back to the pool (PlayerState.acquireChess)');
-  assert.ok(toasts.includes('整备区已满，获得的干员已返还'), 'the toast of any gained operator with no room');
-  // the cell found no slot and no gained operator to stay on: destroyed with a log warning, as in a merge
-  assert.equal(ownedItems(ps, CELL).length, 0);
-  assert.ok(h.logs.warn.some((w) => w.includes(`returned item ${CELL} destroyed (no space)`)), 'logged');
+  assert.ok(ps.temp.some((p) => p.id === t3), 'the gained operator remains in overflow');
+  assert.equal(m.pool.left(t3), left0 - 1, 'the queued operator retains its shared copy');
+  assert.ok(!toasts.includes('整备区已满，获得的干员已返还'));
+  assert.equal(ownedItems(ps, CELL).length, 1, 'the cell can be equipped again after refill');
+  assert.equal(ps.temp.length, 7);
+  assert.deepEqual(h.logs.warn, []);
   checkInvariants(m);
   m.dispose();
 });
