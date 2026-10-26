@@ -7,6 +7,20 @@ import { ENDLESS_DEFAULTS, validEndlessOptions } from '../../shared/endless.js';
 import { validateC2S } from '../../shared/protocol.js';
 import { DATA, makeMatch } from './harness.js';
 import { wireOptions } from '../../server/match/host/proxy.js';
+import { getVersionData } from '../../server/data.js';
+import { VERSIONS } from '../../shared/versions.js';
+
+test('0.3.3 official versions keep two-copy promotion without modifying their generated records', () => {
+  for (const version of VERSIONS) {
+    const raw = getVersionData(version.id);
+    const c = Object.values(raw.chess).find(c => c.visible && !c.isGolden && c.upgradeNum === 3);
+    assert.ok(c, version.id);
+    const gd = new GameData(raw, 'mode_single_normal');
+    assert.equal(gd.mergeCount(c.chessId), 2, version.id);
+    assert.equal(c.upgradeNum, 3, 'source data stays official');
+    if (version.dir) assert.equal(gd.endless, null);
+  }
+});
 
 test('default two-copy promotion keeps the deployed tile, equipment and actual stock accounting', () => {
   const h = makeMatch({ mode: 'solo', fake: true }).start().toPrep(1);
@@ -67,8 +81,11 @@ test('custom settings reject malformed, non-finite and out-of-range values', () 
 
 test('0.3.0 host IPC carries custom Ultimate settings, while plugin modes retain their own schedule and globals', () => {
   const options = { ...ENDLESS_DEFAULTS, rounds: 40 };
-  const wire = wireOptions({ modeId: 'mode_multi_abyss', endless: options, send() {} });
+  const wire = wireOptions({ modeId: 'mode_multi_abyss', endless: options, version: 'act1autochess', soloUnlimited: true, kitted: ['char_102_texas'], send() {} });
   assert.deepEqual(JSON.parse(JSON.stringify(wire)).endless, options);
+  assert.equal(wire.version, 'act1autochess');
+  assert.equal(wire.soloUnlimited, true);
+  assert.deepEqual(wire.kitted, ['char_102_texas']);
   assert.equal('send' in wire, false);
   const customMode = { ...DATA.config.modes.mode_single_abyss, modeId: 'mode_x_demo_abyss', lastRound: 7, bossRound: 7, hiddenRound: null,
     economy: { deployCap: 11, mergeCountOverrides: { chess_char_1_01_a: 4 } } };

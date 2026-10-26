@@ -30,6 +30,11 @@ test('custom Ultimate settings: host-only, synchronized, reset guest readiness, 
     await guest.waitFor('room.state');
     const options = { rounds: 50, growthStart: 15, hpGrowth: 30, atkGrowth: 15 };
     assert.equal((await guest.request({ t: 'room.setEndless', options })).code, 'NOT_HOST');
+    await ok(host, { t: 'room.proposeVersion', version: 'act1autochess' });
+    const voting = await guest.waitFor('room.state', s => !!s.versionVote);
+    assert.equal((await host.request({ t: 'room.setEndless', options })).code, 'VERSION_VOTE');
+    await ok(guest, { t: 'room.versionVote', voteId: voting.versionVote.id, agree: false });
+    await host.waitFor('room.state', s => !s.versionVote);
     await ok(guest, { t: 'room.ready', ready: true });
     await host.waitFor('room.state', s => s.seats.some(p => p?.playerId === guest.id && p.ready));
     await ok(host, { t: 'room.setEndless', options });

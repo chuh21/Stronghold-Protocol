@@ -30,13 +30,15 @@ renumbered by first appearance, units are named by board uid or def id), board p
 within a tick (they are counted, not hashed) and wall-clock time. Damage / healing sums are rounded to integers and HP
 to 2 decimals.
 
-`npm test` runs the fast subset (the scenarios marked `"fast": true`: every chess record with its default loadout,
-every stage and every non-leader enemy kind, every bond at its top tier, six fields, eleven matches, the five stand-in
-battles of the normal records, the first 自选 battle of the operator kits and of the prototypes — 66 of the 289). `GOLDEN_FULL=1` checks everything.
+`npm test` runs the fast subset: the scenarios marked `"fast": true` in the golden files, selected by `isFast` in
+`tools/golden.mjs`. `GOLDEN_FULL=1` checks everything. Use the listing commands below to inspect the current corpus
+and fast subset.
 
 ## Workflow
 
 ```sh
+node tools/golden.mjs --list                     # list the current corpus without running it
+node tools/golden.mjs --fast --list              # list only the fast subset
 GOLDEN_FULL=1 node --test test/golden.test.js   # the whole corpus (≈ 20 s with 4 worker threads)
 node --test test/golden.test.js                 # the fast subset
 npm run golden                                  # the same comparison from the tool (all families, a short report)
@@ -48,7 +50,10 @@ node tools/golden.mjs --twice                   # determinism: the corpus twice 
   committing it. If a digest moves, the refactor changed behaviour: find out why (the first differing value of `snaps`
   says when two runs parted, in 10-game-second steps) instead of updating the files.
 - **An intended gameplay change** (a fix, new content, a data rebuild): run `npm run golden:update` and commit the
-  changed files together with the change, saying in the commit message which scenarios moved and why.
+  changed files together with the change, saying in the commit message which scenarios moved and why. Until the
+  official versions' M1 started, `test/versions-default-guard.test.js` (G1) also pinned the sha256 of these files and
+  of the default `data/*.json` as the M0 merge check (DESIGN §35.22.2); M1 deleted it (§35.23), so these files and
+  `test/golden.test.js` are the only pin again.
 - **Reviewing the diff:** every scenario is a block of its own and every unit / enemy / round is one line, so a diff
   shows which scenarios moved and which values changed. A change confined to the scenarios that contain the touched
   operator, enemy or rule is expected; a change everywhere (every `rngDraws`, every `snaps`) means something global
@@ -59,8 +64,20 @@ node tools/golden.mjs --twice                   # determinism: the corpus twice 
   hook list is frozen in the tool and the corpus is regenerated only on `golden:update` — but new data records do join
   the corpus there (the roster family enumerates `data/chess.json`).
 
-The custom 0.3.0.1 corpus has 289 scenarios, including 22 full matches. The original stand-in / DIY seeds remain as outcome regressions even when they field no such operator. The
+The original stand-in / DIY seeds remain as outcome regressions even when they field no such operator. The
 `coop2-NORMAL-1-unowned-roster` scenario supplies no owned NORMAL operators, so stand-in coverage does not depend on
-the bot choosing one of a small set of missing operators. With two-copy promotion, its seed-2 companion
-`coop2-NORMAL-2-coverage-unowned-roster` exercises multiple stand-in types while seed 1 remains an outcome regression.
-`coop2-NORMAL-5-coverage-diy` covers the DIY path.
+the bot choosing one of a small set of missing operators. `coop2-NORMAL-5-coverage-diy` covers the DIY path.
+
+Historical versions (0.3.2 M2): pass `--version <official-id>` to use the snapshot in an isolated process/worker.
+The six corpora live under `<versionSlug>/`; root JSON files remain the default. Generate a historical corpus with
+`node tools/golden.mjs --version act1autochess --update --twice`; the second pass reverses scenario order.
+`test/versions-golden.test.js` checks corpus identity, engine errors and representative worker execution.
+
+
+## Custom 0.3.3.1 branch
+
+The selected version's matches run the owner's two-copy promotion and repeatable personnel documents. Only
+built-in Ultimate modes (default 第二期下半) use the custom 20–100-round view and compounded growth. Original
+upstream seeds remain; the seed-2 unowned-roster companion is kept in every version to cover stand-ins with the
+custom promotion rule. There are 999 scenarios in total: 289 default, 270 第二期上半, 221 第一期下半 and 219 第一期上半.
+Custom moves and reasons: [migration record](../../docs/research/local-0331-upgrade.md).

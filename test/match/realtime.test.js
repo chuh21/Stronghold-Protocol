@@ -160,7 +160,9 @@ async function prep(c, stats) {
 }
 
 test('real-time co-op over websockets with the real simulation: 2 humans + 2 AI from the room to the prep of round 4', { timeout: 120_000 }, async () => {
-  srv = await startServer({ port: 0, host: '127.0.0.1', log, MatchClass: RealtimeMatch, seedFn: () => 20260928 });
+  // The 40x scripted clients probe many illegal tiles in one burst; rate limiting has its own network tests.
+  srv = await startServer({ port: 0, host: '127.0.0.1', log, ratePerSec: 2000, rateBurst: 2000,
+    MatchClass: RealtimeMatch, seedFn: () => 20260928 });
   const a = await player('Alpha');
   const b = await player('Bravo');
   assert.equal((await a.request({ t: 'room.create', mode: 'coop', difficulty: 'NORMAL' })).t, 'ok');
